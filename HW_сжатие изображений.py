@@ -88,7 +88,20 @@ class ImageCompressor:
         self. __quality = quality
         self. __supported_formats = (".jpg", ".jpeg", ".png")
 
+    @property
+    def quality(self) -> int:
+        """Получает значение качества сжатия."""
+        return self. __quality
     
+    @quality.setter
+    def quality(self, quality: int) -> None:
+        """Устанавливает значение качества сжатия."""
+        if quality < 1 or quality > 100:
+            raise ValueError("Качество сжатия должно быть в диапазоне от 1 до 100.")
+        self. __quality = quality
+        if not isinstance(quality, int):
+            raise TypeError("Качество сжатия должно быть целым числом.")
+
     def compress_image(self, input_path: str, output_path: str) -> None:
         """
         Сжимает изображение и сохраняет его в формате HEIF.
