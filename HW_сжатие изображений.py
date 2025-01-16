@@ -2,6 +2,30 @@ import os
 from typing import Union
 from PIL import Image
 from pillow_heif import register_heif_opener
+from plyer import notification
+
+class Notification: # Класс для уведомлений
+    @staticmethod
+    def print_message(prefix: str, message: str) -> None:
+        notification.notify(
+            title=prefix,
+            message=message,
+            app_name="Image Compressor",
+            timeout=10  
+        )
+
+    @staticmethod
+    def info(message: str) -> None:
+        Notification.print_message("Информация", message)
+    
+    @staticmethod
+    def success(message: str) -> None:
+        Notification.print_message("Успешно", message)
+    
+    @staticmethod
+    def error(message: str) -> None:
+        Notification.print_message("Ошибка", message)
+
 
 QUALITY: int = 50  # Можно настроить качество сжатия
 
@@ -19,6 +43,7 @@ QUALITY: int = 50  # Можно настроить качество сжатия
 #     with Image.open(input_path) as img:
 #         img.save(output_path, "HEIF", quality=QUALITY)
 #     print(f"Сжато: {input_path} -> {output_path}")
+
 
 # def process_directory(directory: str) -> None:
 #     """
@@ -96,11 +121,11 @@ class ImageCompressor:
     @quality.setter
     def quality(self, quality: int) -> None:
         """Устанавливает значение качества сжатия."""
+        if not isinstance(quality, int):
+            raise TypeError("Качество сжатия должно быть целым числом.")
         if quality < 1 or quality > 100:
             raise ValueError("Качество сжатия должно быть в диапазоне от 1 до 100.")
         self. __quality = quality
-        if not isinstance(quality, int):
-            raise TypeError("Качество сжатия должно быть целым числом.")
 
     def compress_image(self, input_path: str, output_path: str) -> None:
         """
@@ -113,9 +138,15 @@ class ImageCompressor:
         Returns:
         None
         """
-        with Image.open(input_path) as img:
-            img.save(output_path, "HEIF", quality=QUALITY)
-        print(f"Сжато: {input_path} -> {output_path}")
+        try:
+            with Image.open(input_path) as img:
+                img.save(output_path, "HEIF", quality=self.__quality)
+            Notification.success(f"Файл {input_path} сжат")
+        except FileNotFoundError:
+            Notification.error("Файл не найден")
+        except Exception as e:
+            Notification.error(f"Ошибка при сжатии {input_path}: {str(e)}")
+        
 
     def process_directory(self, directory: str) -> None:
         """
@@ -145,17 +176,17 @@ class ImageCompressor:
         if os.path.exists(input_path):
             if os.path.isfile(input_path):
                 # Если указан путь к файлу, обрабатываем только этот файл
-                print(f"Обрабатываем файл: {input_path}")
+                # Notification.info(f"Обрабатываем файл: {input_path}")
                 output_path = os.path.splitext(input_path)[0] + '.heic'
                 self.compress_image(input_path, output_path)
             elif os.path.isdir(input_path):
                 # Если указан путь к директории, обрабатываем все файлы в ней
-                print(f"Обрабатываем директорию: {input_path}")
+                # Notification.info(f"Обрабатываем директорию: {input_path}")
                 self.process_directory(input_path)
                 # Функция process_directory рекурсивно обойдет все поддиректории
                 # и обработает все поддерживаемые изображения
         else:
-            print("Указанный путь не существует")
+            Notification.error("Указанный путь не существует")
 
 if __name__ == "__main__":
     user_input: str = input("Введите путь к файлу или директории: ")
